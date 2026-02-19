@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Todo App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container mt-5">
+
+    <h2 class="mb-4 text-center">Todo App with Image Upload</h2>
+
+    <form method="POST" enctype="multipart/form-data" class="mb-4">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+            {{ form.task }}
+            {% for error in form.task.errors %}
+            <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.image }}
+            {% for error in form.image.errors %}
+            <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        {{ form.submit }}
+    </form>
+
+    <hr>
+
+    <div class="row">
+        {% for todo in todos %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+
+                {% if todo.image %}
+                <img src="{{ url_for('static', filename='uploads/' + todo.image) }}" class="card-img-top"
+                    style="height:200px; object-fit:cover;">
+                {% endif %}
+
+                <div class="card-body">
+                    <h5 class="card-title">{{ todo.task }}</h5>
+
+                    <a href="{{ url_for('delete', id=todo.id) }}" class="btn btn-danger btn-sm">
+                        Delete
+                    </a>
+                </div>
+
+            </div>
+        </div>
+        {% else %}
+        <p class="text-muted">No tasks yet.</p>
+        {% endfor %}
+    </div>
+
+</body>
+
+</html>
