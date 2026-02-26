@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendar – TaskFlow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+
+    .sidebar {
+      width: 260px; min-height: 100vh; background: #1e1b4b;
+      position: fixed; top: 0; left: 0; display: flex; flex-direction: column;
+    }
+    .sidebar-brand {
+      padding: 28px 24px 20px; display: flex; align-items: center; gap: 12px;
+    }
+    .sidebar-brand .logo {
+      width: 38px; height: 38px; background: #6366f1; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; color: white; font-size: 18px;
+    }
+    .sidebar-brand span { font-size: 20px; font-weight: 700; color: white; }
+    .sidebar-nav { flex: 1; padding: 8px 12px; }
+    .nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+      color: #6d6aad; padding: 16px 12px 8px; }
+    .nav-link {
+      display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+      border-radius: 8px; color: #a5b4fc; text-decoration: none; font-size: 14px;
+      font-weight: 500; margin-bottom: 2px; transition: all .2s;
+    }
+    .nav-link:hover, .nav-link.active { background: rgba(99,102,241,.2); color: white; }
+    .nav-link i { width: 18px; text-align: center; }
+    .sidebar-footer { padding: 16px 12px 24px; border-top: 1px solid rgba(255,255,255,.1); }
+    .user-avatar-sm {
+      width: 36px; height: 36px; background: #6366f1; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;
+      font-size: 15px; overflow: hidden;
+    }
+    .user-avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
+    .logout-btn {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      color: #f87171; text-decoration: none; font-size: 13px; border-radius: 6px; transition: background .2s;
+    }
+    .logout-btn:hover { background: rgba(239,68,68,.15); }
+
+    .main { margin-left: 260px; }
+    .topbar {
+      background: white; padding: 16px 32px; display: flex; align-items: center;
+      justify-content: space-between; border-bottom: 1px solid #e2e8f0;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .content { padding: 28px 32px; }
+
+    /* LEGEND */
+    .legend {
+      background: white; border-radius: 12px; border: 1px solid #e2e8f0;
+      padding: 14px 20px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+    }
+    .legend-title { font-size: 13px; font-weight: 600; color: #64748b; margin-right: 4px; }
+    .legend-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #1e293b; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+    /* CALENDAR CARD */
+    .calendar-card {
+      background: white; border-radius: 12px; border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06); padding: 24px;
+    }
+
+    /* FULLCALENDAR OVERRIDES */
+    .fc { font-family: 'Inter', sans-serif; }
+    .fc-toolbar-title { font-size: 18px !important; font-weight: 700 !important; color: #1e293b; }
+    .fc-button-primary {
+      background: #6366f1 !important; border-color: #6366f1 !important;
+      font-family: 'Inter', sans-serif !important; font-size: 13px !important;
+      border-radius: 8px !important; padding: 6px 14px !important;
+    }
+    .fc-button-primary:hover { background: #4f46e5 !important; border-color: #4f46e5 !important; }
+    .fc-button-primary:not(:disabled).fc-button-active {
+      background: #4f46e5 !important; border-color: #4f46e5 !important;
+    }
+    .fc-col-header-cell { background: #f8fafc; padding: 10px 0 !important; }
+    .fc-col-header-cell-cushion {
+      font-size: 12px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .5px; color: #64748b; text-decoration: none !important;
+    }
+    .fc-daygrid-day-number {
+      font-size: 13px; color: #1e293b; text-decoration: none !important; padding: 6px !important;
+    }
+    .fc-day-today { background: #f5f3ff !important; }
+    .fc-day-today .fc-daygrid-day-number { color: #6366f1; font-weight: 700; }
+    .fc-event {
+      border-radius: 6px !important; border: none !important;
+      padding: 2px 6px !important; font-size: 12px !important; cursor: pointer;
+    }
+    .fc-event-title { font-weight: 500 !important; }
+    .fc-daygrid-event-dot { display: none; }
+
+    /* TASK DETAIL MODAL */
+    .task-modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4);
+      z-index: 1000; align-items: center; justify-content: center;
+    }
+    .task-modal-overlay.show { display: flex; }
+    .task-modal {
+      background: white; border-radius: 16px; padding: 28px; width: 100%;
+      max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      animation: slideUp .2s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .task-modal-header {
+      display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;
+    }
+    .task-modal-title { font-size: 17px; font-weight: 700; color: #1e293b; flex: 1; padding-right: 12px; }
+    .modal-close {
+      width: 28px; height: 28px; border-radius: 6px; border: none;
+      background: #f1f5f9; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; color: #64748b; font-size: 13px; flex-shrink: 0;
+    }
+    .modal-close:hover { background: #e2e8f0; }
+    .modal-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+      font-size: 14px; color: #475569;
+    }
+    .modal-row i { width: 16px; color: #6366f1; }
+    .badge {
+      display: inline-flex; align-items: center; padding: 3px 10px;
+      border-radius: 50px; font-size: 11px; font-weight: 600; text-transform: capitalize;
+    }
+    .badge-high    { background: #fee2e2; color: #991b1b; }
+    .badge-medium  { background: #fef3c7; color: #92400e; }
+    .badge-low     { background: #dcfce7; color: #166534; }
+    .badge-pending     { background: #f1f5f9; color: #475569; }
+    .badge-in_progress { background: #dbeafe; color: #1e40af; }
+    .badge-completed   { background: #dcfce7; color: #166534; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-edit {
+      flex: 1; background: #6366f1; color: white; border: none; padding: 9px;
+      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      text-decoration: none; font-family: inherit;
+    }
+    .btn-edit:hover { background: #4f46e5; color: white; }
+    .btn-close-modal {
+      flex: 1; background: #f1f5f9; color: #64748b; border: none; padding: 9px;
+      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-close-modal:hover { background: #e2e8f0; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .content { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo"><i class="fas fa-check-double"></i></div>
+    <span>TaskFlow</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Main</div>
+    <a href="{{ url_for('index') }}" class="nav-link">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+    <div class="nav-label">Manage</div>
+    <a href="{{ url_for('categories') }}" class="nav-link">
+      <i class="fas fa-tags"></i> Categories
+    </a>
+    <a href="{{ url_for('calendar_view') }}" class="nav-link active">
+      <i class="fas fa-calendar"></i> Calendar
+    </a>
+    <a href="{{ url_for('export_csv') }}" class="nav-link">
+      <i class="fas fa-download"></i> Export CSV
+    </a>
+    <a href="{{ url_for('api_todos') }}" class="nav-link" target="_blank">
+      <i class="fas fa-code"></i> REST API
+    </a>
+    <div class="nav-label">Account</div>
+    <a href="{{ url_for('profile') }}" class="nav-link">
+      <i class="fas fa-user"></i> Profile
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="d-flex align-items-center gap-2 px-2 mb-2">
+      <div class="user-avatar-sm">
+        {% if current_user.profile_pic %}
+        <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}">
+        {% else %}
+        {{ current_user.username[0].upper() }}
+        {% endif %}
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:white;">{{ current_user.username }}</div>
+        <div style="font-size:11px;color:#a5b4fc;">{{ current_user.email }}</div>
+      </div>
+    </div>
+    <a href="{{ url_for('logout') }}" class="logout-btn">
+      <i class="fas fa-sign-out-alt"></i> Sign Out
+    </a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div style="font-size:18px;font-weight:600;">
+      <i class="fas fa-calendar me-2" style="color:#6366f1;"></i>Calendar
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="fas fa-plus me-1"></i> Add Task
+    </a>
+  </div>
+
+  <div class="content">
+
+    <!-- LEGEND -->
+    <div class="legend">
+      <span class="legend-title">Legend:</span>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#ef4444;"></div> High Priority
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#f59e0b;"></div> Medium Priority
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#22c55e;"></div> Low Priority
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#94a3b8;"></div> Completed
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="calendar-card">
+      <div id="calendar"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TASK DETAIL MODAL -->
+<div class="task-modal-overlay" id="taskModal">
+  <div class="task-modal">
+    <div class="task-modal-header">
+      <div class="task-modal-title" id="modal-title"></div>
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-row">
+      <i class="fas fa-flag"></i>
+      <span>Priority: </span>
+      <span id="modal-priority"></span>
+    </div>
+    <div class="modal-row">
+      <i class="fas fa-circle-dot"></i>
+      <span>Status: </span>
+      <span id="modal-status"></span>
+    </div>
+    <div class="modal-row">
+      <i class="fas fa-calendar-alt"></i>
+      <span id="modal-date"></span>
+    </div>
+    <div class="modal-row" id="modal-desc-row" style="display:none;">
+      <i class="fas fa-align-left"></i>
+      <span id="modal-desc"></span>
+    </div>
+    <div class="modal-actions">
+      <a href="#" id="modal-edit-btn" class="btn-edit">
+        <i class="fas fa-pen"></i> Edit Task
+      </a>
+      <button class="btn-close-modal" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,listWeek'
+      },
+      height: 'auto',
+      events: '/api/calendar-events',
+      eventClick: function (info) {
+        const props = info.event.extendedProps;
+        const id    = info.event.id;
+
+        document.getElementById('modal-title').textContent = info.event.title;
+
+        document.getElementById('modal-priority').innerHTML =
+          `<span class="badge badge-${props.priority}">${props.priority}</span>`;
+
+        document.getElementById('modal-status').innerHTML =
+          `<span class="badge badge-${props.status}">${props.status.replace('_',' ')}</span>`;
+
+        document.getElementById('modal-date').textContent =
+          'Due: ' + info.event.start.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+        const descRow = document.getElementById('modal-desc-row');
+        if (props.description) {
+          document.getElementById('modal-desc').textContent = props.description;
+          descRow.style.display = 'flex';
+        } else {
+          descRow.style.display = 'none';
+        }
+
+        document.getElementById('modal-edit-btn').href = `/edit/${id}`;
+        document.getElementById('taskModal').classList.add('show');
+      },
+      eventMouseEnter: function (info) {
+        info.el.style.opacity = '0.85';
+        info.el.style.transform = 'scale(1.02)';
+      },
+      eventMouseLeave: function (info) {
+        info.el.style.opacity = '1';
+        info.el.style.transform = 'scale(1)';
+      }
+    });
+
+    calendar.render();
+  });
+
+  function closeModal() {
+    document.getElementById('taskModal').classList.remove('show');
+  }
+
+  // Close modal when clicking outside
+  document.getElementById('taskModal').addEventListener('click', function (e) {
+    if (e.target === this) closeModal();
+  });
+</script>
+
+</body>
+</html>

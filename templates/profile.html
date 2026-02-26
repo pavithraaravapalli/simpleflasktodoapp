@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile – TaskFlow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+
+    .sidebar {
+      width: 260px; min-height: 100vh; background: #1e1b4b;
+      position: fixed; top: 0; left: 0; display: flex; flex-direction: column;
+    }
+    .sidebar-brand {
+      padding: 28px 24px 20px; display: flex; align-items: center; gap: 12px;
+    }
+    .sidebar-brand .logo {
+      width: 38px; height: 38px; background: #6366f1; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; color: white; font-size: 18px;
+    }
+    .sidebar-brand span { font-size: 20px; font-weight: 700; color: white; }
+    .sidebar-nav { flex: 1; padding: 8px 12px; }
+    .nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+      color: #6d6aad; padding: 16px 12px 8px; }
+    .nav-link {
+      display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+      border-radius: 8px; color: #a5b4fc; text-decoration: none; font-size: 14px;
+      font-weight: 500; margin-bottom: 2px; transition: all .2s;
+    }
+    .nav-link:hover, .nav-link.active { background: rgba(99,102,241,.2); color: white; }
+    .nav-link i { width: 18px; text-align: center; }
+    .sidebar-footer { padding: 16px 12px 24px; border-top: 1px solid rgba(255,255,255,.1); }
+    .user-avatar-sm {
+      width: 36px; height: 36px; background: #6366f1; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;
+      font-size: 15px; overflow: hidden;
+    }
+    .user-avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
+    .logout-btn {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      color: #f87171; text-decoration: none; font-size: 13px; border-radius: 6px; transition: background .2s;
+    }
+    .logout-btn:hover { background: rgba(239,68,68,.15); }
+
+    .main { margin-left: 260px; }
+    .topbar {
+      background: white; padding: 16px 32px; display: flex; align-items: center;
+      justify-content: space-between; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50;
+    }
+    .content { padding: 28px 32px; }
+
+    /* PROFILE HERO */
+    .profile-hero {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      border-radius: 16px; padding: 32px; margin-bottom: 24px;
+      display: flex; align-items: center; gap: 24px; color: white;
+    }
+    .profile-avatar {
+      width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; font-weight: 700; color: white;
+      border: 3px solid rgba(255,255,255,.4); overflow: hidden; flex-shrink: 0;
+    }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-hero-info h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .profile-hero-info p { font-size: 14px; opacity: .8; margin: 0; }
+    .profile-hero-info .bio { font-size: 13px; opacity: .7; margin-top: 6px; font-style: italic; }
+
+    /* STATS ROW */
+    .profile-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .profile-stat-card {
+      background: white; border-radius: 12px; padding: 18px; text-align: center;
+      border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .profile-stat-value { font-size: 26px; font-weight: 700; color: #1e293b; }
+    .profile-stat-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+    /* FORM SECTIONS */
+    .section-card {
+      background: white; border-radius: 12px; border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06); margin-bottom: 20px; overflow: hidden;
+    }
+    .section-header {
+      padding: 16px 24px; border-bottom: 1px solid #e2e8f0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-header i { color: #6366f1; font-size: 16px; }
+    .section-header h6 { margin: 0; font-size: 15px; font-weight: 600; color: #1e293b; }
+    .section-body { padding: 24px; }
+
+    .form-label { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px; }
+    .form-control, .form-select {
+      border: 1.5px solid #e2e8f0; border-radius: 8px; font-family: inherit;
+      font-size: 14px; padding: 10px 14px; outline: none; transition: border-color .2s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #6366f1; box-shadow: none;
+    }
+    .form-control textarea { resize: vertical; }
+    .field-error { font-size: 12px; color: #ef4444; margin-top: 4px; }
+
+    /* AVATAR UPLOAD */
+    .avatar-upload-area {
+      border: 2px dashed #e2e8f0; border-radius: 12px; padding: 24px;
+      text-align: center; cursor: pointer; transition: all .2s;
+    }
+    .avatar-upload-area:hover { border-color: #6366f1; background: #f5f3ff; }
+    .avatar-upload-area i { font-size: 28px; color: #a5b4fc; margin-bottom: 8px; display: block; }
+    .avatar-upload-area p { font-size: 13px; color: #64748b; margin: 0; }
+    .avatar-preview {
+      width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+      border: 3px solid #6366f1; margin: 0 auto 12px; display: none;
+    }
+
+    /* TOGGLE SWITCH */
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0; border-bottom: 1px solid #f1f5f9;
+    }
+    .toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .toggle-info h6 { font-size: 14px; font-weight: 600; margin: 0 0 3px; color: #1e293b; }
+    .toggle-info p { font-size: 12px; color: #64748b; margin: 0; }
+    .form-check-input {
+      width: 42px; height: 22px; cursor: pointer;
+    }
+    .form-check-input:checked { background-color: #6366f1; border-color: #6366f1; }
+
+    /* DANGER ZONE */
+    .danger-zone {
+      background: #fff5f5; border: 1px solid #fecaca; border-radius: 12px; padding: 20px;
+    }
+    .danger-zone h6 { color: #991b1b; font-weight: 600; margin-bottom: 6px; }
+    .danger-zone p { font-size: 13px; color: #64748b; margin-bottom: 14px; }
+
+    .btn-save {
+      background: #6366f1; color: white; border: none; padding: 10px 24px;
+      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px; transition: background .2s;
+      font-family: inherit;
+    }
+    .btn-save:hover { background: #4f46e5; }
+    .btn-cancel {
+      background: transparent; color: #64748b; border: 1.5px solid #e2e8f0;
+      padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500;
+      cursor: pointer; font-family: inherit; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-cancel:hover { background: #f8fafc; color: #1e293b; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .content { padding: 16px; }
+      .profile-stats { grid-template-columns: repeat(2, 1fr); }
+      .profile-hero { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo"><i class="fas fa-check-double"></i></div>
+    <span>TaskFlow</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Main</div>
+    <a href="{{ url_for('index') }}" class="nav-link">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+    <div class="nav-label">Manage</div>
+    <a href="{{ url_for('categories') }}" class="nav-link">
+      <i class="fas fa-tags"></i> Categories
+    </a>
+    <a href="{{ url_for('calendar_view') }}" class="nav-link">
+      <i class="fas fa-calendar"></i> Calendar
+    </a>
+    <a href="{{ url_for('export_csv') }}" class="nav-link">
+      <i class="fas fa-download"></i> Export CSV
+    </a>
+    <a href="{{ url_for('api_todos') }}" class="nav-link" target="_blank">
+      <i class="fas fa-code"></i> REST API
+    </a>
+    <div class="nav-label">Account</div>
+    <a href="{{ url_for('profile') }}" class="nav-link active">
+      <i class="fas fa-user"></i> Profile
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="d-flex align-items-center gap-2 px-2 mb-2">
+      <div class="user-avatar-sm">
+        {% if current_user.profile_pic %}
+        <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}">
+        {% else %}
+        {{ current_user.username[0].upper() }}
+        {% endif %}
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:white;">{{ current_user.username }}</div>
+        <div style="font-size:11px;color:#a5b4fc;">{{ current_user.email }}</div>
+      </div>
+    </div>
+    <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div style="font-size:18px;font-weight:600;">My Profile</div>
+    <a href="{{ url_for('index') }}" class="btn-cancel">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+  </div>
+
+  <div class="content">
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert">
+        <i class="fas fa-info-circle me-2"></i>{{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- PROFILE HERO -->
+    <div class="profile-hero">
+      <div class="profile-avatar">
+        {% if current_user.profile_pic %}
+        <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}">
+        {% else %}
+        {{ current_user.username[0].upper() }}
+        {% endif %}
+      </div>
+      <div class="profile-hero-info">
+        <h2>{{ current_user.username }}</h2>
+        <p>{{ current_user.email }}</p>
+        {% if current_user.bio %}
+        <p class="bio">{{ current_user.bio }}</p>
+        {% endif %}
+        <p style="font-size:12px;opacity:.6;margin-top:8px;">
+          <i class="fas fa-calendar-alt me-1"></i>
+          Member since {{ current_user.created_at.strftime('%B %Y') }}
+        </p>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="profile-stats">
+      <div class="profile-stat-card">
+        <div class="profile-stat-value" style="color:#6366f1;">{{ stats.total }}</div>
+        <div class="profile-stat-label">Total Tasks</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="profile-stat-value" style="color:#22c55e;">{{ stats.completed }}</div>
+        <div class="profile-stat-label">Completed</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="profile-stat-value" style="color:#f59e0b;">{{ stats.pending }}</div>
+        <div class="profile-stat-label">Pending</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="profile-stat-value" style="color:#ef4444;">{{ stats.overdue }}</div>
+        <div class="profile-stat-label">Overdue</div>
+      </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+      {{ form.hidden_tag() }}
+
+      <!-- BASIC INFO -->
+      <div class="section-card">
+        <div class="section-header">
+          <i class="fas fa-user"></i>
+          <h6>Basic Information</h6>
+        </div>
+        <div class="section-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Username</label>
+              {{ form.username(class="form-control") }}
+              {% for e in form.username.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              {{ form.email(class="form-control", type="email") }}
+              {% for e in form.email.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-12">
+              <label class="form-label">Bio <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
+              {{ form.bio(class="form-control", rows=3, placeholder="Tell us a little about yourself...") }}
+              {% for e in form.bio.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE PICTURE -->
+      <div class="section-card">
+        <div class="section-header">
+          <i class="fas fa-camera"></i>
+          <h6>Profile Picture</h6>
+        </div>
+        <div class="section-body">
+          <img id="avatar-preview" class="avatar-preview" src="#">
+          <div class="avatar-upload-area" onclick="document.getElementById('profile_pic_input').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p><strong>Click to upload</strong> or drag and drop</p>
+            <p style="margin-top:4px;font-size:12px;">JPG, PNG, GIF up to 5MB</p>
+          </div>
+          {{ form.profile_pic(class="d-none", id="profile_pic_input") }}
+          {% if current_user.profile_pic %}
+          <div class="mt-2 d-flex align-items-center gap-2">
+            <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}"
+              style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+            <span style="font-size:13px;color:#64748b;">Current profile picture</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- NOTIFICATIONS -->
+      <div class="section-card">
+        <div class="section-header">
+          <i class="fas fa-bell"></i>
+          <h6>Notifications</h6>
+        </div>
+        <div class="section-body">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <h6>Due Date Reminders</h6>
+              <p>Receive email reminders the day before a task is due</p>
+            </div>
+            {{ form.email_reminders(class="form-check-input", role="switch", type="checkbox") }}
+          </div>
+        </div>
+      </div>
+
+      <!-- CHANGE PASSWORD -->
+      <div class="section-card">
+        <div class="section-header">
+          <i class="fas fa-lock"></i>
+          <h6>Change Password</h6>
+        </div>
+        <div class="section-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Current Password</label>
+              {{ form.current_password(class="form-control", placeholder="Enter current password") }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">New Password</label>
+              {{ form.new_password(class="form-control", placeholder="Enter new password") }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Required to save any changes</label>
+              <div style="font-size:12px;color:#64748b;padding-top:8px;">
+                <i class="fas fa-info-circle me-1" style="color:#6366f1;"></i>
+                Enter your current password to confirm changes
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SAVE BUTTONS -->
+      <div class="d-flex gap-3 mb-4">
+        <button type="submit" class="btn-save">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
+        <a href="{{ url_for('index') }}" class="btn-cancel">
+          <i class="fas fa-times"></i> Cancel
+        </a>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Preview profile picture before upload
+  document.getElementById('profile_pic_input').addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const preview = document.getElementById('avatar-preview');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+</script>
+
+</body>
+</html>

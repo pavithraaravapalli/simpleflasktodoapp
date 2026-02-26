@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Edit Task – TaskFlow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+
+    .sidebar {
+      width: 260px; min-height: 100vh; background: #1e1b4b;
+      position: fixed; top: 0; left: 0; display: flex; flex-direction: column;
+    }
+    .sidebar-brand {
+      padding: 28px 24px 20px; display: flex; align-items: center; gap: 12px;
+    }
+    .sidebar-brand .logo {
+      width: 38px; height: 38px; background: #6366f1; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; color: white; font-size: 18px;
+    }
+    .sidebar-brand span { font-size: 20px; font-weight: 700; color: white; }
+    .sidebar-nav { flex: 1; padding: 8px 12px; }
+    .nav-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+      color: #6d6aad; padding: 16px 12px 8px; }
+    .nav-link {
+      display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+      border-radius: 8px; color: #a5b4fc; text-decoration: none; font-size: 14px;
+      font-weight: 500; margin-bottom: 2px; transition: all .2s;
+    }
+    .nav-link:hover, .nav-link.active { background: rgba(99,102,241,.2); color: white; }
+    .nav-link i { width: 18px; text-align: center; }
+    .sidebar-footer { padding: 16px 12px 24px; border-top: 1px solid rgba(255,255,255,.1); }
+    .user-avatar {
+      width: 36px; height: 36px; background: #6366f1; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;
+    }
+    .logout-btn {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      color: #f87171; text-decoration: none; font-size: 13px; border-radius: 6px; transition: background .2s;
+    }
+    .logout-btn:hover { background: rgba(239,68,68,.15); }
+
+    .main { margin-left: 260px; }
+    .topbar {
+      background: white; padding: 16px 32px; display: flex; align-items: center;
+      justify-content: space-between; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50;
+    }
+    .content { padding: 28px 32px; }
+
+    .form-card { max-width: 680px; }
+    .field-error { font-size: 12px; color: #ef4444; margin-top: 4px; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .content { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo"><i class="fas fa-check-double"></i></div>
+    <span>TaskFlow</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Main</div>
+    <a href="{{ url_for('index') }}" class="nav-link">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+    <div class="nav-label">Manage</div>
+    <a href="{{ url_for('categories') }}" class="nav-link">
+      <i class="fas fa-tags"></i> Categories
+    </a>
+    <a href="{{ url_for('api_todos') }}" class="nav-link" target="_blank">
+      <i class="fas fa-code"></i> REST API
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="d-flex align-items-center gap-2 px-2 mb-2">
+      <div class="user-avatar">{{ current_user.username[0].upper() }}</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:white;">{{ current_user.username }}</div>
+        <div style="font-size:11px;color:#a5b4fc;">{{ current_user.email }}</div>
+      </div>
+    </div>
+    <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div style="font-size:18px;font-weight:600;">{{ title }}</div>
+    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+  </div>
+
+  <div class="content">
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card border-0 shadow-sm form-card">
+      <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-semibold">
+          <i class="fas fa-{% if todo %}pen{% else %}plus-circle{% endif %} me-2" style="color:#6366f1;"></i>{{ title }}
+        </h6>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" enctype="multipart/form-data">
+          {{ form.hidden_tag() }}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.task.label }} <span class="text-danger">*</span></label>
+            {{ form.task(class="form-control", placeholder="What needs to be done?") }}
+            {% for e in form.task.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.description.label }}</label>
+            {{ form.description(class="form-control", rows=3, placeholder="Add more details (optional)...") }}
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">{{ form.priority.label }}</label>
+              {{ form.priority(class="form-select") }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">{{ form.status.label }}</label>
+              {{ form.status(class="form-select") }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">{{ form.due_date.label }}</label>
+              {{ form.due_date(class="form-control") }}
+              {% for e in form.due_date.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ form.category_id.label }}</label>
+              {{ form.category_id(class="form-select") }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ form.image.label }}</label>
+              {{ form.image(class="form-control") }}
+              {% for e in form.image.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+              {% if todo and todo.image %}
+              <div class="mt-2">
+                <img src="{{ url_for('static', filename='uploads/' + todo.image) }}"
+                  style="height:60px;border-radius:6px;object-fit:cover;"> 
+                <span class="text-muted small ms-2">Current image</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-sm px-4" style="background:#6366f1;color:white;">
+              <i class="fas fa-{% if todo %}save{% else %}plus{% endif %} me-1"></i>
+              {% if todo %}Update Task{% else %}Add Task{% endif %}
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-times me-1"></i> Cancel
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – TaskFlow{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- STATS -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fas fa-list-check"></i></div>
+    <div class="stat-value">{{ stats.total }}</div>
+    <div class="stat-label">Total Tasks</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="fas fa-check-circle"></i></div>
+    <div class="stat-value">{{ stats.completed }}</div>
+    <div class="stat-label">Completed</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-clock"></i></div>
+    <div class="stat-value">{{ stats.pending }}</div>
+    <div class="stat-label">Pending</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-fire"></i></div>
+    <div class="stat-value">{{ stats.high_priority }}</div>
+    <div class="stat-label">High Priority</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="fas fa-exclamation-triangle"></i></div>
+    <div class="stat-value">{{ stats.overdue }}</div>
+    <div class="stat-label">Overdue</div>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<form method="GET" action="{{ url_for('dashboard') }}">
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label><i class="fas fa-search"></i> Search</label>
+      <input type="text" name="search" class="search-input" placeholder="Search tasks..." value="{{ search }}">
+    </div>
+    <div class="filter-group">
+      <label>Priority</label>
+      <select name="priority">
+        <option value="">All Priorities</option>
+        <option value="high"   {% if filter_priority=='high'   %}selected{% endif %}>🔴 High</option>
+        <option value="medium" {% if filter_priority=='medium' %}selected{% endif %}>🟡 Medium</option>
+        <option value="low"    {% if filter_priority=='low'    %}selected{% endif %}>🟢 Low</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <select name="status">
+        <option value="">All Status</option>
+        <option value="pending"     {% if filter_status=='pending'     %}selected{% endif %}>Pending</option>
+        <option value="in_progress" {% if filter_status=='in_progress' %}selected{% endif %}>In Progress</option>
+        <option value="completed"   {% if filter_status=='completed'   %}selected{% endif %}>Completed</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Category</label>
+      <select name="category">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat.id }}" {% if filter_category==cat.id|string %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Filter</button>
+    {% if search or filter_priority or filter_status or filter_category %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm"><i class="fas fa-times"></i> Clear</a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- TASKS TABLE -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-tasks" style="color:var(--primary);margin-right:8px;"></i>Tasks
+      <span style="font-size:13px;font-weight:400;color:var(--text-muted);margin-left:8px;">({{ todos|length }} result{% if todos|length != 1 %}s{% endif %})</span>
+    </h3>
+    <a href="{{ url_for('add_todo') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Task</a>
+  </div>
+  <div class="card-body">
+    {% if todos %}
+    <table class="todo-table">
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Category</th>
+          <th>Due Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for todo in todos %}
+        <tr>
+          <td>
+            <div class="todo-title {% if todo.status == 'completed' %}completed{% endif %}">{{ todo.title }}</div>
+            {% if todo.description %}
+            <div class="todo-desc">{{ todo.description[:80] }}{% if todo.description|length > 80 %}…{% endif %}</div>
+            {% endif %}
+          </td>
+          <td><span class="badge badge-{{ todo.priority }}">{{ todo.priority }}</span></td>
+          <td><span class="badge badge-{{ todo.status }} status-badge">{{ todo.status.replace('_',' ') }}</span></td>
+          <td>
+            {% if todo.category %}
+            <span class="category-dot" style="background:{{ todo.category.color }};"></span>{{ todo.category.name }}
+            {% else %}<span style="color:var(--text-muted);font-size:12px;">—</span>{% endif %}
+          </td>
+          <td>
+            {% if todo.due_date %}
+              <span style="font-size:13px; {% if todo.is_overdue %}color:var(--danger);font-weight:600;{% endif %}">
+                {% if todo.is_overdue %}<i class="fas fa-exclamation-circle"></i> {% endif %}
+                {{ todo.due_date.strftime('%b %d, %Y') }}
+              </span>
+            {% else %}<span style="color:var(--text-muted);font-size:12px;">No date</span>{% endif %}
+          </td>
+          <td>
+            <div class="actions">
+              <button class="action-btn toggle" onclick="toggleTodo({{ todo.id }}, this)"
+                title="{% if todo.status == 'completed' %}Mark Pending{% else %}Mark Complete{% endif %}">
+                <i class="fas fa-{% if todo.status == 'completed' %}undo{% else %}check{% endif %}"></i>
+              </button>
+              <a href="{{ url_for('edit_todo', todo_id=todo.id) }}" class="action-btn edit" title="Edit">
+                <i class="fas fa-pen"></i>
+              </a>
+              <form method="POST" action="{{ url_for('delete_todo', todo_id=todo.id) }}" style="display:inline;"
+                onsubmit="return confirm('Delete this task?')">
+                <button type="submit" class="action-btn delete" title="Delete"><i class="fas fa-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-clipboard-list"></i>
+      <p>No tasks found. {% if search or filter_priority or filter_status or filter_category %}Try clearing your filters.{% else %}<a href="{{ url_for('add_todo') }}">Add your first task!</a>{% endif %}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
